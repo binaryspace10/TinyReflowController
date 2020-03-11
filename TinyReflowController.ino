@@ -137,6 +137,7 @@ typedef enum REFLOW_STATE
 {
   REFLOW_STATE_IDLE,
   REFLOW_STATE_PREHEAT,
+  REFLOW_STATE_BAKE,
   REFLOW_STATE_SOAK,
   REFLOW_STATE_REFLOW,
   REFLOW_STATE_COOL,
@@ -186,11 +187,13 @@ typedef enum REFLOW_PROFILE
 // ***** LEAD FREE PROFILE CONSTANTS *****
 #define TEMPERATURE_SOAK_MAX_LF 200
 #define TEMPERATURE_REFLOW_MAX_LF 250
+#define TEMPERATURE_BAKE_MAX_LF 75
 #define SOAK_MICRO_PERIOD_LF 9000
-
+#define BAKE_MIRCO_PERIOD_LF 48000000 //time constant added for baking period 
 // ***** LEADED PROFILE CONSTANTS *****
 #define TEMPERATURE_SOAK_MAX_PB 180
 #define TEMPERATURE_REFLOW_MAX_PB 224
+#define TEMPERATURE_BAKE_MAX_PB 75
 #define SOAK_MICRO_PERIOD_PB 10000
 
 // ***** SWITCH SPECIFIC CONSTANTS *****
@@ -204,6 +207,10 @@ typedef enum REFLOW_PROFILE
 #define PID_KP_PREHEAT 100
 #define PID_KI_PREHEAT 0.025
 #define PID_KD_PREHEAT 20
+// ***** BAKING STAGE ******
+#define PID_KP_BAKE 80
+#define PID_KI_BAKE 0.02
+#define PID_KD_BAKE 16 
 // ***** SOAKING STAGE *****
 #define PID_KP_SOAK 300
 #define PID_KI_SOAK 0.05
@@ -224,6 +231,7 @@ typedef enum REFLOW_PROFILE
 const char* lcdMessagesReflowStatus[] = {
   "Ready",
   "Pre",
+  "Bake",
   "Soak",
   "Reflow",
   "Cool",
@@ -644,6 +652,26 @@ void loop()
         // Proceed to soaking state
         reflowState = REFLOW_STATE_SOAK;
       }
+      break;
+
+    case REFLOW_STATE_BAKE:
+      // steps needed 1. get temperature to 75 celcius 2. keep at temperature for some time
+      //3. reduce temperature after said time
+      
+      timerBake = millis();
+      // if statement added to set the temperature
+      if (input =< TEMPERATURE_COOL_MIN && input > TEMPERATURE_BAKE_MAX_LF)
+      {
+      reflowOvenPID.SetTunings(PID_KP_BAKE, PID_KI_BAKE, PID_KD_BAKE);
+      setpoint = TEMPERATURE_BAKE_MAX_LF;
+      reflowState = REFLOW_STATE_BAKE;
+      }
+      elif (input == TEMPERATURE_BAKE_MAX_LF)
+      {
+        timerbake =  BAKE_MIRCO_PERIOD_LF; //need to add something to wait until time is finished or to set properly 
+      }
+      //reflowstate is set to cool to cool down after bake
+      reflowState = REFLOW_STATE_COOL;
       break;
 
     case REFLOW_STATE_SOAK:
